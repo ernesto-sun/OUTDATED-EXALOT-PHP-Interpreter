@@ -28,6 +28,8 @@
 // PHP 5 (untested)
 // MySQL 5.6.4  (the millisecond-function for @now does not work before)	
 
+// for a more complete documentation check out the website. 
+
 // -------------------------------------------------------------------------
 
 
