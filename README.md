@@ -15,4 +15,4 @@ The only server-side entry-point is api.php
 
 Clean and full documentation is under construction.
 
-Note: The first release is planned autumn 2015
+Note: The first release is planned to happen in autumn 2015
