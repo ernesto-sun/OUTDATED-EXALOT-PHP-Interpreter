@@ -1,32 +1,42 @@
 <?php
 
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  api_04_syntax_exp.php uses a recursive function to check the syntax
+ *  for each entity and sub-entity
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
 
-// -------------------------------------------------------------------------
 
-// EXALOT <http://exalot.com> digital language for all agents
-// Copyright (C) 2014-2015 Ing. Ernst Johann Peterec (http://ernesto-sun.com)
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as
-// published by the Free Software Foundation, either version 3 of the
-// License, or (at your option) any later version.
+/**
+ *
+*/
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-// @file    api_04_syntax_exp.php
-// @brief   syntax-parsing of expressions (using recursion)     
-
-// @author  Ernesto (eto) <contact@ernesto-sun.com>
-// @create  20150112-eto  
-// @update  20150618-eto  
-
-// -------------------------------------------------------------------------
+if(!$is_api_call)die('X');
 
 
 //---------------------------------------------------------------
@@ -189,13 +199,13 @@ function checkEXP($x_node,&$in)
     //ok
     if ((int) $number == $number) 
     {
-      set_row_literal($in,'int',$number);
-    
+      $in['v']=(int)$number;
+      $in['y']='int';
     }
     else
     {
-      set_row_literal($in,'float',$number);
-      //float
+      $in['v']=$number;
+      $in['y']='float';
     }
   }
   elseif(is_array($x_node))
@@ -293,7 +303,6 @@ function checkEXP($x_node,&$in)
     }
 
     $in['v']=$n;
-    $in['y']=$n;
 
     
     if($in['y']=='var_set')
@@ -324,9 +333,11 @@ function checkEXP($x_node,&$in)
       {
 	case 'cl':
 	  $in['v']=validate_cl_from_x($x_node);
+	  $in['y']='cl';
 	
 	  $in['c_sub']=0;
 	  $count=1; // This disables looking for the cl-details. All done already.
+
 	break;
 	case 's':
 
@@ -335,9 +346,24 @@ function checkEXP($x_node,&$in)
 	    msg('error-syntax','EXA-parsing failed: An array given where a string is expected!',$in);
 	  }
 
-	  $in['v']=validInput($x_node[1]);
-	  $in['c_str']=strlen($in['v']);
+	  $in['s']=validInput($x_node[1]);
+	  $in['y']='s';
 
+          $in['c_str']=strlen($in['s']);
+          if($in['c_str']>255)
+          {
+            $in['v']=substr($in['s'],0,255);
+            if($in['v'][254]=='\\')
+            {
+              // 'bad luck' after shortening an escaped string to have \ at the end, would escape the following '
+              $in['v'][254]='.';
+            }
+          }
+          else 
+          {
+              $in['v']=$in['s'];
+          }
+          
 	  $in['c_sub']=0;
 	  $count=1; // This disables looking for the string-details.
 	break;
@@ -351,8 +377,24 @@ function checkEXP($x_node,&$in)
 	  {
 	    msg('error-syntax','EXA-parsing failed: an empty p is not allowed in syntax, use noo instead',$in);
 	  }
-	break;
+	  $in['y']='p';
+	
+          break;
+       case 'e':
+	  if($in['depth']<2)
+	  {
+	    msg('error-syntax','EXA-parsing failed: an \'e\' can only happen as sub-expression.',$in);
+	  }
+	  
+	  if($in['c_sub']<1)
+	  {
+	    msg('error-syntax','EXA-parsing failed: an empty  \'e\' is not allowed in syntax',$in);
+	  }
+	  $in['y']='e_usage';
+          
+          break;
 	case 'pile':
+	  $in['y']='pile';
 
 	  if($in['c_sub']<2)
 	  {
@@ -365,8 +407,10 @@ function checkEXP($x_node,&$in)
 	    $in['var']=array();
 	  }
 	break;
-	case 'if':
-	  if($in['c_sub']<2||$in['c_sub']>3)
+	case '#if':
+	  $in['y']='if';
+
+          if($in['c_sub']<2||$in['c_sub']>3)
 	  {
 	    msg('error-syntax','EXA-parsing failed: if-expression must have 2 or 3 sub-entity.',$in);
 	  }
@@ -378,8 +422,10 @@ function checkEXP($x_node,&$in)
 	  }
 	  
 	  break;
-	case 'each':
-	  if($in['c_sub']!=3)
+	case '#each':
+	  $in['y']='each';
+
+          if($in['c_sub']!=3)
 	  {
 	    msg('error-syntax','EXA-parsing failed: each statement needs three sub-entities',$in);
 	  }
@@ -393,10 +439,14 @@ function checkEXP($x_node,&$in)
 	  
 	  $in['subr_e']=array();
 	  $in['subr_i']=array();
-	  
+
+          $in['context']=array(); // holds e,r,i,c later
+
 	break;
-	case 'break':
-	  if($in['c_sub']!=1)
+	case '#break':
+	  $in['y']='break';
+
+            if($in['c_sub']!=1)
 	  {
 	    msg('error-syntax','EXA-parsing failed: a break-statement needs one sub-entity',$in);
 	  }
@@ -409,8 +459,10 @@ function checkEXP($x_node,&$in)
 	    msg('error-syntax','EXA-parsing failed: a break-statement can only happen in a if-branch in a each-statement',$in);
 	  }
 	break;	
-	case 'lot':
-	  if($in['c_sub']<2)
+	case '#lot':
+	  $in['y']='lot';
+
+            if($in['c_sub']<2)
 	  {
 	    msg('error-syntax','EXA-parsing failed: lot-statement needs at least two sub-entities',$in);
 	  }
@@ -425,8 +477,10 @@ function checkEXP($x_node,&$in)
 	  $in['subr_in']=array();
 	  
 	break;
-	case 'sub':
-	  if($in['c_sub']<2)
+	case '#sub':
+	  $in['y']='sub';
+
+          if($in['c_sub']<2)
 	  {
 	    msg('error-syntax','EXA-parsing failed: sub-statement needs at least two sub-entities',$in);
 	  }
@@ -442,7 +496,9 @@ function checkEXP($x_node,&$in)
 
 	break;
 	case 'limited':
-	  if($in['depth']!=1)
+	  $in['y']='limited';
+
+          if($in['depth']!=1)
 	  {
 	    msg('error-syntax','EXA-parsing failed: limited-definition must be top-level.',$in);
 	  }
@@ -455,20 +511,39 @@ function checkEXP($x_node,&$in)
 	  $GLOBALS['temp']['i-sys']++;
 	break;
 	case 'default':
-	  if($in['depth']!=1)
+	  $in['y']='default';
+
+          if($in['depth']!=1)
 	  {
 	    msg('error-syntax','EXA-parsing failed: default-definition must be top-level.',$in);
 	  }
 	  if($in['c_sub']!=2)
 	  {
-	    msg('error-syntax','EXA-parsing failed: limited-definition must have 1 sub-entity.',$in);
+	    msg('error-syntax','EXA-parsing failed: limited-definition must have 2 sub-entities.',$in);
+	  }
+	  
+	  $in['is_sys']=1;
+	  $GLOBALS['temp']['i-sys']++;
+	break;
+	case 'co':
+	  $in['y']='co';
+            
+	  if($in['depth']!=1)
+	  {
+	    msg('error-syntax','EXA-parsing failed: co-definition (condition) must be top-level.',$in);
+	  }
+	  if($in['c_sub']!=2)
+	  {
+	    msg('error-syntax','EXA-parsing failed: co-definition must have 2 sub-entities.',$in);
 	  }
 	  
 	  $in['is_sys']=1;
 	  $GLOBALS['temp']['i-sys']++;
 	break;
 	case 'privacy':
-	  if($in['depth']!=1)
+	  $in['y']='privacy';
+
+          if($in['depth']!=1)
 	  {
 	    msg('error-syntax','EXA-parsing failed: privacy-definition must be top-level.',$in);
 	  }
@@ -479,6 +554,8 @@ function checkEXP($x_node,&$in)
 	  $GLOBALS['temp']['i-sys']++;
 	break;
 	case 'op':
+	  $in['y']='op';
+            
 	  if($in['depth']!=1)
 	  {
 	    msg('error-syntax','EXA-parsing failed: op-definition must be top-level.',$in);
@@ -495,52 +572,52 @@ function checkEXP($x_node,&$in)
 	break;
 	case '<=':
 	    $in['y']='f_usage';
-	    $in['v']='f-lteq';
+	    $in['v']='#lteq';
 	    if($in['is_not'])
 	    {
 	      unset($in['is_not']);
-	      $in['v']='f-gt';
+	      $in['v']='#gt';
 	    }
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	case '<':
 	    $in['y']='f_usage';
-	    $in['v']='f-lt';
+	    $in['v']='#lt';
 	    if($in['is_not'])
 	    {
 	      unset($in['is_not']);
-	      $in['v']='f-gteq';
+	      $in['v']='#gteq';
 	    }
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	case '>=':
 	    $in['y']='f_usage';
-	    $in['v']='f-gteq';
+	    $in['v']='#gteq';
 	    if($in['is_not'])
 	    {
 	      unset($in['is_not']);
-	      $in['v']='f-lt';
+	      $in['v']='#lt';
 	    }
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	case '>':
 	    $in['y']='f_usage';
-	    $in['v']='f-gt';
+	    $in['v']='#gt';
 	    if($in['is_not'])
 	    {
 	      unset($in['is_not']);
-	      $in['v']='f-lteq';
+	      $in['v']='#lteq';
 	    }
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	case '=':
 	    $in['y']='f_usage';
-	    $in['v']='f-eq';
+	    $in['v']='#eq';
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	case '==':
 	    $in['y']='f_usage';
-	    $in['v']='f-eqeq';
+	    $in['v']='#eqeq';
 	    unset($in['is_notnot']); // notnot has no effect on binary operations 
 	  break;
 	default:
@@ -558,9 +635,26 @@ function checkEXP($x_node,&$in)
 	    }
 	  }
 	  
-	  if($n[0]=='f'&&isset($n[1])&&$n[1]=='-')
+	  if($n[0]=='#')
 	  {
 	    $in['y']='f_usage';
+            
+            if($in['c_sub']>1)
+            {
+              $x_node=array($in['v'],$x_node);
+              $x_node[1][0]='e';
+                              
+              // create special in that put's together the entity  
+//              $in['sub']=array(0=>0,1=>array('v'=>'',
+//			   'y'=>'e_usage',
+//			   'x_path'=>"{$in['x_path']}:1",
+//			   'depth'=>$in['depth'],        // increased in checkEXP soon
+//			   'x_i'=>$in['x_i'],
+//			   'i'=>1,
+//			   'c_sub'=>$in['c_sub'],
+//			   'sub'=>array(0=>0));
+//              $in=&$in_e_usage;
+            }
 	  }
 	  else
 	  {
@@ -573,7 +667,6 @@ function checkEXP($x_node,&$in)
       if($in['y']=='e_usage'||$in['y']=='f_usage')
       {
 	$GLOBALS['temp']['c-exp']+=1;
-	
 	
 	if(strpos($GLOBALS['temp']['n-list-exp'],"'{$in['v']}'"))
 	{
@@ -593,14 +686,17 @@ function checkEXP($x_node,&$in)
     {
       $in['sub'][$i]=array('v'=>'',
 			   'y'=>'',
-			   'x_path'=>"{$in['x_path']}@{$i}",
+			   'x_path'=>"{$in['x_path']}:{$i}",
 			   'depth'=>$in['depth'],        // increased in checkEXP soon
 			   'x_i'=>$in['x_i'],
 			   'i'=>$i,
+			   'in_sup'=>&$in,
 			   'c_sub'=>0,
 			   'sub'=>array(0=>0));
 
-      			   
+      
+      if(isset($in['sub'][$i]['is_contextual']))$in['is_contextual']=1;                     
+                           
       switch($in['y'])
       {
 	case 'if':
@@ -626,8 +722,6 @@ function checkEXP($x_node,&$in)
 	      $in['sub'][$i]['var']=array();
 	    }
 	  }
-
-	  
 	break;
 	case 'op':
 	  $in['sub'][$i]['is_in_op']=1;
@@ -658,7 +752,21 @@ function checkEXP($x_node,&$in)
 	  }
 	break;
 	case 'sub':
-	  $in['sub'][$i]['sub']=&$in;
+	  $in['sub'][$i]['in_sub']=&$in;
+	  if($i==2)
+	  {
+	    $in['sub'][$i]['is_exp']=1;
+	    
+	    if(!isset($in['var_top']))
+	    {
+	      $in['sub'][$i]['var_top']=&$in;
+	      $in['sub'][$i]['var']=array();
+	    }
+	    
+	  }
+	break;
+	case 'co':
+	  $in['sub'][$i]['in_co']=&$in;
 	  if($i==2)
 	  {
 	    $in['sub'][$i]['is_exp']=1;
@@ -748,10 +856,10 @@ function checkEXP($x_node,&$in)
 
 	if(!strpos($GLOBALS['temp']['n-list-new'],"'{$in['sub'][1]['v']}'"))
 	{
-	  msg('error-syntax','EXA-parsing failed: the entity-name for limited expression is not defined in this statement',$in);
+	  msg('error-syntax','EXA-parsing failed: the entity-name: '.$in['sub'][1]['v'].' for limited expression is not defined (in this statement!)',$in);
 	}
 	
-	if($in['sub'][1]['v'][0]=='f'&&isset($in['sub'][1]['v'][1])&&$in['sub'][1]['v'][1]=='-')
+	if($in['sub'][1]['v'][0]=='#')
 	{
 	  msg('error-syntax','EXA-parsing failed: limited expressions can not be used on functions',$in);
 	}
@@ -762,9 +870,20 @@ function checkEXP($x_node,&$in)
 	  msg('error-syntax','EXA-parsing failed: the entity-name for default expression is not defined in this statement',$in);
 	}
 
-	if($in['sub'][1]['v'][0]=='f'&&isset($in['sub'][1]['v'][1])&&$in['sub'][1]['v'][1]=='-')
+	if($in['sub'][1]['v'][0]=='#')
 	{
 	  msg('error-syntax','EXA-parsing failed: default expressions can not be used on functions',$in);
+	}
+      break;
+      case 'co':
+	if(!strpos($GLOBALS['temp']['n-list-new'],"'{$in['sub'][1]['v']}'"))
+	{
+	  msg('error-syntax','EXA-parsing failed: the entity-name for co-definition (condition) is not defined in this statement',$in);
+	}
+
+	if($in['sub'][1]['v'][0]=='#')
+	{
+	  msg('error-syntax','EXA-parsing failed: co-definition (condition) can not be used on functions',$in);
 	}
       break;
       case 'each':
@@ -806,12 +925,6 @@ function checkEXP($x_node,&$in)
   {
     // ---------------------------------------- SINGULAR ------------- BEGIN
 	// a direct non-literal expression, must be a name only or var, context (incl. path)
-// 	$ok=preg_match('/^\!{0,2}\@{0,2}[a-z][a-z0-9\-\@]*$/',$x_node);
-// 	if(!$ok)
-// 	{
-// 	    msg('error-syntax','EXA-parsing failed: Invalid entity-name in expression: ',$in);
-// 	}
-
       
     $offset=0;
     if($x_node[0]=='!')
@@ -837,7 +950,7 @@ function checkEXP($x_node,&$in)
 
 	if(!isset($in['var_top']))
 	{
-	  msg('error-syntax','EXA-parsing failed: a variable get is used without context',$in);
+	  msg('error-syntax','EXA-parsing failed: a variable is used at invalid position',$in);
 	}
       }
       else
@@ -845,6 +958,7 @@ function checkEXP($x_node,&$in)
 	$in['y']='context';
 	$offset+=1;
 	$GLOBALS['temp']['i-context']++;
+	$in['is_contextual']=1;
       }
     }
 
@@ -856,7 +970,7 @@ function checkEXP($x_node,&$in)
     
 
     
-    $exp=explode('@',$x_node);
+    $exp=explode(':',$x_node);
     $n=$exp[0];
 
     if(isset($exp[1]))
@@ -1024,7 +1138,7 @@ function checkEXP($x_node,&$in)
 	
 	if(empty($n))
 	{
-	  msg('error-syntax','EXA-parsing failed: entity name is invalid',$in);
+	  msg('error-syntax','EXA-parsing failed: entity name is empty and invalid',$in);
 	}
 	
 	switch($n)
@@ -1041,15 +1155,15 @@ function checkEXP($x_node,&$in)
 	      msg('error-syntax','EXA-parsing failed: this entity can not be used stand-alone',$in);
 	  break;
 	  case 'f':
-	    if(!$GLOBALS['context']['is-exalot'])
-	    {
-	      msg('error-syntax','EXA-parsing failed: a break-statement needs one sub-entity',$in);
-	    }
+//	    if(!$GLOBALS['is-exalot'])
+//	    {
+	      msg('error-syntax','EXA-parsing failed: a single \'f\' can not be used.',$in);
+//	    }
 	  break;
 	  case 'p':
 	    if(!isset($in['is_in_op'])||$in['depth']!=2||$in['i']!=2)
 	    {
-	      msg('error-syntax','EXA-parsing failed: a single p is only as second op-parameter, othersie it needs sub-entities',$in);
+	      msg('error-syntax','EXA-parsing failed: a single p is only as second op-parameter, otherwise it needs sub-entities',$in);
 	    }
 	    $in['y']='p';
 	  break;
@@ -1068,7 +1182,7 @@ function checkEXP($x_node,&$in)
 	    $in['y']='noo';
 	    if(isset($in['path']))
 	    {
-	      msg('error-syntax','EXA-parsing failed: a single bit x can not have a path',$in);
+	      msg('error-syntax','EXA-parsing failed: a single bit noo can not have a path',$in);
 	    }
 	    
 	    if(isset($in['is_not']))
@@ -1099,7 +1213,7 @@ function checkEXP($x_node,&$in)
 	    }
 	  break;
 	  default:
-	    if($n[0]=='f'&&isset($n[1])&&$n[1]=='-')
+	    if($n[0]=='#')
 	    {
 	      if(!isset($in['is_in_op'])||$in['depth']!=2||$in['i']!=1)
 	      {
@@ -1156,8 +1270,7 @@ function checkEXP($x_node,&$in)
       
   $GLOBALS['in'][]=$in;
   $GLOBALS['in-i']++;  
-  $in['i_op']=$GLOBALS['in-i'];
+  $in['in_i']=$GLOBALS['in-i'];
   
 }
 
-?>

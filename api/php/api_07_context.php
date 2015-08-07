@@ -1,4 +1,43 @@
 <?php
+
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  api_07_context.php is part of semantic checking and does the work for
+ *  context-variables 
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
+
+
+/**
+ *
+*/
+
+
+
+
 if(!$GLOBALS['is_api_call'])die('X');
 
 function get_context(&$in)
@@ -50,7 +89,7 @@ function get_context(&$in)
     case 'u':
       // protected user-view	READ-ONLY 
 
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-u';
       
   // [['e','context-u'],
@@ -69,85 +108,42 @@ function get_context(&$in)
     break;
     case 'agent':
       // protected agent-view	READ-ONLY
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-agent';
     break;
     case 'con':
       // protected con-view		READ-ONLY
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-con';
     break;
     case 'st':
       // protected statement-view	READ-ONLY
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-statement';
     break;
     case 'g':
       // protected group-view	READ-WRITE (depending on user-permissions)
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-group';
       //$in['c_sub']=4;
       //$in['sub']=array(0=>0)
     break;
     case 'service':
       // useful data about the current-exalot-service-execution	READ-ONLY
-      $in['y']='e_usage';
+      //$in['y']='e_usage';
       $in['n_def']='context-service';
-      $in['c_sub']=4;
-      $in['sub']=array(0=>0,
-		       1=>array('y'=>'s',
-				'is_literal'=>1,
-				'n_def'=>'name',
-				'c_str'=>strlen($GLOBALS['conf']['service']),
-				'v'=>$GLOBALS['conf']['service'],
-				'c_sub'=>0,
-				'sub'=>array(0=>0)),
-		       2=>array('y'=>'s',
-				'is_literal'=>1,
-				'n_def'=>'s-version',
-				'c_str'=>strlen($GLOBALS['conf']['version']),
-				'v'=>$GLOBALS['conf']['version'],
-				'c_sub'=>0,
-				'sub'=>array(0=>0)),
-		       3=>array('y'=>'s',
-				'is_literal'=>1,
-				'n_def'=>'s-version-alias',
-				'c_str'=>strlen($GLOBALS['conf']['version-alias']),
-				'v'=>$GLOBALS['conf']['version-alias'],
-				'c_sub'=>0,
-				'sub'=>array(0=>0)),
-		       4=>array('y'=>'s',
-				'is_literal'=>1,
-				'n_def'=>'s-os',
-				'c_str'=>strlen(PHP_OS),
-				'v'=>PHP_OS,
-				'c_sub'=>0,
-				'sub'=>array(0=>0)));
-	  
+      //$in['c_sub']=4;
     break;
     case 'now':	
 	// timestamp of first now-usage	READ-ONLY
       
-	if(!isset($GLOBALS['temp']['v-now']))
-	{
-	  $cl=strToClock(dbs::value($GLOBALS['conf']['mysql-before-5-6-4']?
-				    'SELECT NOW()':
-				    'SELECT sysdate(3)')); // to ensure being at db-time
-	
-	  $GLOBALS['temp']['v-now']=$cl;
-	}
-
-	$in['y']='cl';
-	$in['v']=$GLOBALS['temp']['v-now'];
 	$in['n_def']='cl';
-	$in['is_literal']=1;
       
     break;
     case 'random':
       // a random number in float between 0 and 100 (PHP-random)	READ-ONLY
-
-      $in['v']=100*mt_rand(1,mt_getrandmax()-1)/mt_getrandmax();
-      $in['y']=$in['n_def']='float';
+        
+        $in['n_def']='float';
     break;
     default:
       msg('error-internal','invalid case in a context',$in);
@@ -155,4 +151,3 @@ function get_context(&$in)
   }  
 }
      
-?>  

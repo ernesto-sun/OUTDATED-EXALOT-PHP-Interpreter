@@ -1,0 +1,8 @@
+<NotepadPlus>
+    <Project name="EXALOT_Docu">
+        <File name="_etc\readme\core\core.exa" />
+        <File name="_etc\readme\core\core_mini_comlpete.exa" />
+        <File name="_etc\readme\core\letter-meaning.txt" />
+        <File name="_etc\_db\20150406_exalot_v1.sql" />
+    </Project>
+</NotepadPlus>

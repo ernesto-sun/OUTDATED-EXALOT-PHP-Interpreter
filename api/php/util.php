@@ -1,5 +1,43 @@
 <?php
+
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  util.php holds a number of useful functions for the EXALOT server
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
+
+
+
+/**
+ *
+*/
+
+
 if(!$is_api_call)die('X');
+
 
 
 //------------------------------------------
@@ -59,18 +97,18 @@ function msg($msg,$details,$debug='',$debug2='')
   if($GLOBALS['debug'])
   {
     header("Message: {$GLOBALS['msg'][$msg]['d']}: {$details}");
-    echo $debug;
+    echo '<br/>\n\r'.$debug,'\n\r<br/>';
     header("Debug: {$debug}");
   }
   
-  if ($writeToDB)
+  if ($writeToDB&&isset($GLOBALS['db']))
   {
     
     $details=validDB($details);
     $debug=validDB($debug);
     
     $GLOBALS['temp']['i-msg']+=1;
-    dbs::exec("INSERT INTO {$GLOBALS['pre']}msg(
+    db_exec("INSERT INTO {$GLOBALS['pre']}msg(
     id_st_o,
     i,
     n_u,
@@ -78,39 +116,45 @@ function msg($msg,$details,$debug='',$debug2='')
     id_ses,
     id_con,
     id_st,
-    id_x,
+    id_in,
     n_msg_template,
     msg,
     description,
     msg_debug) VALUES
-    ({$GLOBALS['context']['id-st-o']},
+    ({$GLOBALS['id-st-o']},
     {$GLOBALS['temp']['i-msg']},
-    '{$GLOBALS['context']['n-u']}',
-    '{$GLOBALS['context']['n-u-agent']}',
-    {$GLOBALS['context']['id-ses']},
-    {$GLOBALS['context']['id-con']},
-    {$GLOBALS['context']['id-st']},
-    {$GLOBALS['context']['id-x']},
+    '{$GLOBALS['n-u']}',
+    '{$GLOBALS['n-u-agent']}',
+    {$GLOBALS['id-ses']},
+    {$GLOBALS['id-con']},
+    {$GLOBALS['id-st']},
+    {$GLOBALS['id-x']},
     '{$msg}',
     '{$type}',
     '{$details}',
     '{$debug}')");
   }
 
-  if($GLOBALS['debug'])
-  {
-    echo '<br/><br/>---------------------------<br/><br/>message: ',$msg;
-    echo '<br/><br/>---------------------------<br/><br/>type: ',$type;
-    echo '<br/><br/>---------------------------<br/><br/>details: ',$details;
-    echo '<br/><br/>---------------------------<br/><br/>debug: ',$debug;
-  
-    debug_dump_all();
-  }
-  
   if($s>0)
   {
     header('Error: {$combi}',1,$s);
   }
+
+  if($GLOBALS['debug'])
+  {
+    echo '
+\n\r<br/><br/>message: ',strtoupper($msg);
+    
+    echo '
+\n\r<br/><br/>type: ',$type;
+    echo '
+\n\r<br/><br/>details: ',$details;
+    echo '
+\n\r<br/><br/>debug: ',$debug;
+  
+    debug_dump_all();
+  }
+  
   
   if($die)
   {
@@ -204,27 +248,7 @@ function debug_dump_all()
     print_r($GLOBALS['data-temp']);
   }
 
-  echo '
-
-  temp....
-
-  ';
-  print_r($GLOBALS['temp']);
-  echo '
-
-
-  st....
-
-  ';
-  print_r($GLOBALS['st']);
-  echo '
-
-
-  context....
-
-  ';
-  print_r($GLOBALS['context']);
-  die('Aha');
+  die('<br/><br/>\r\n\r\n ------- END of debug_dump_all and END of execution.');
 
 }
 
@@ -239,7 +263,6 @@ function validText($txt) // for html-textes
 //--------------------------------------
 function validOutput($txt)  // for text-fields
 {
-  //if (strlen($txt) > 0) echo '</br>Aha: ',$txt,'</br>';
   return $txt;
 }
 
@@ -247,8 +270,7 @@ function validOutput($txt)  // for text-fields
 //--------------------------------------
 function validDB($txt)
 {
-  global $conn;
-  return mysqli_real_escape_string($conn,stripslashes($txt));
+  return mysqli_real_escape_string($GLOBALS['db'],stripslashes($txt));
 }
 
 //--------------------------------------
@@ -259,15 +281,13 @@ function validInput($txt, $forSQL = true, $htmlentities = true)
 	   msg('error-internal','Internal Error: An array given where a string is expected! May be uncatched syntax-error.');
 	}
 	else
-	{
-		global $conn;
-	
+	{	
 		//$txt=rawurldecode($txt)
 		$txt=stripslashes($txt);
 		if($htmlentities)$txt=htmlentities($txt);
 		$txt=strip_tags($txt);
 		//$txt = str_ireplace('script', 'blocked', $txt);
-		$txt = mysqli_real_escape_string($conn,$txt);
+		$txt = mysqli_real_escape_string($GLOBALS['db'],$txt);
 	}
 	return $txt;
 }
@@ -772,6 +792,9 @@ function strToClock($str,$makeUTC=0)
     }
     $cl_str.=sprintf(' %03d',$ms);
   }
+
+  
+  $n=sprintf('cl-%04d-%02d-%02d-%02d-%02d-%02d-%03d',$year,$month,$day,$hour,$min,$sec,$ms);
   
   if($tz!=''&&$tz!='utc')
   {
@@ -781,6 +804,7 @@ function strToClock($str,$makeUTC=0)
   return array('year'=>$year,
 	  'cl'=>$cl,
 	  'str'=>$cl_str,
+          'n'=>$n,
 	  'tz'=>$tz,
 	  'ms'=>$ms,
 	  'syntax_bad'=>$syntax_bad);

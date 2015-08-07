@@ -1,4 +1,44 @@
 <?php
+
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  api_08_con.php keeps conversations together. If at api_02_param.php a 
+ *  con-id is given, checks are performed and the statement is assigned
+ *  to the correct conversation. 
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
+
+
+/**
+ *
+*/
+
+
+
+
 if(!$is_api_call)die('X');
 
 // --------------------------------------------------
@@ -8,18 +48,18 @@ if(!$is_api_call)die('X');
 
 if($con>0)
 {
-  $GLOBALS['context']['_con']=dbs::singlerow("SELECT 
+  $GLOBALS['_con']=singlerow("SELECT 
   n_u,
   con
   FROM {$GLOBALS['pre']}con 
   WHERE id='{$con}'");
 
-  if(count($GLOBALS['context']['_con'])<1)
+  if(count($GLOBALS['_con'])<1)
   {
-     msg('error-unauthorized','invalid login','given conversation-is is not valid');
+     msg('error-unauthorized','invalid login','given conversation-id is not valid');
   }
   
-  if($GLOBALS['context']['_con']['con']=='uu')
+  if($GLOBALS['_con']['con']=='uu')
   {
     //this conversatiom is user-to-user
     //check if user is allowed to add a stetement hier
@@ -28,12 +68,12 @@ if($con>0)
 	msg('error-unauthorized','invalid login','no user logged in to access a uu-conversation');
     }
     
-    $uu_u=dbs::singlerow("SELECT 
+    $uu_u=singlerow("SELECT 
       id,
       is_accepted
       FROM {$GLOBALS['pre']}con_uu_u 
       WHERE id_con={$con} 
-      AND n_u='{$GLOBALS['context']['n-u']}'");
+      AND n_u='{$GLOBALS['n-u']}'");
       
     if(count($uu_u)>0)
     {
@@ -61,7 +101,7 @@ if($con>0)
     
     if($GLOBALS['login'])
     {
-     if($GLOBALS['context']['_con']['n_u']!=$GLOBALS['context']['n-u'])
+     if($GLOBALS['_con']['n_u']!=$GLOBALS['n-u'])
       {
 	msg('error-unauthorized','invalid login','user is not allowed at conversation');
       }
@@ -74,7 +114,7 @@ if($con>0)
     else
     {
       // this is only allowed with session, from there the last-conversation-id
-      if(strlen($GLOBALS['context']['_con']['n_u'])<1)
+      if(strlen($GLOBALS['_con']['n_u'])<1)
       {
 	$okCon=1;
       }
@@ -87,13 +127,13 @@ if($con>0)
 
   if($okCon)
   {
-    $GLOBALS['context']['id-con']=$con;
-    $GLOBALS['context']['con']=$GLOBALS['context']['_con']['con'];
+    $GLOBALS['id-con']=$con;
+    $GLOBALS['con']=$GLOBALS['_con']['con'];
 
-    dbs::exec("UPDATE {$GLOBALS['pre']}con SET 
+    db_exec("UPDATE {$GLOBALS['pre']}con SET 
     c_st=c_st+1,
-    cl_last=NOW(),
-    id_ses={$GLOBALS['context']['id-ses']}");					    
+    cl_last=NOW()
+    WHERE id={$con}");					    
   }
   else
   {
@@ -103,7 +143,7 @@ if($con>0)
 else
 {
   // create con
-  $_SESSION['id-con-last']=$GLOBALS['context']['id-con']=dbs::insert("INSERT INTO {$GLOBALS['pre']}con(
+  $_SESSION['id-con-last']=$GLOBALS['id-con']=insert("INSERT INTO {$GLOBALS['pre']}con(
   i,
   con,
   n_u,
@@ -111,17 +151,18 @@ else
   cl_last,
   n_def,
   is_present,
+  c_st,
   id_ses) VALUES ( 
   0,
   'uc',
-  '{$GLOBALS['context']['n-u']}',
+  '{$GLOBALS['n-u']}',
   NOW(),
   NOW(),
   '',
   1,
-  {$GLOBALS['context']['id-ses']})");	    
+  1,
+  {$GLOBALS['id-ses']})");	    
 }
  
 
  
-?>

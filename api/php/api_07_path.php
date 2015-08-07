@@ -1,11 +1,46 @@
 <?php
 
 
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  api_07_path.php is part of semantic checking and does the work for
+ *  path-expressions
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
+
+
+/**
+ *
+*/
+
+
 //----------------------------------------------------------------------
 function resolve_path(&$in,$onlyCheckPath)
 {
-  $c_path=count($in['path']);
-
+  $in['c_path']=$c_path=count($in['path']);
   $in_path=&$in;
   
   for($m=0;$m<$c_path;$m++)
@@ -24,13 +59,13 @@ function resolve_path(&$in,$onlyCheckPath)
 	  if(isset($in_path['sub'][$v_path]))
 	  {
 	    $in_path=&$in_path['sub'][$v_path];
-	    $ok_sub=1;
+	    $ok_sub=1; // found sub in memory
 	  }
 	}
 	
 	if(!$ok_sub)
 	{
-	  $n_path=dbs::value("SELECT n FROM {$GLOBALS['pre']}sub 
+	  $n_path=value("SELECT n FROM {$GLOBALS['pre']}sub 
 	  WHERE n_sup='{$in_path['v']}' AND i='{$v_path}' AND is_now=1");
 
 	  if(empty($n_path))
@@ -40,13 +75,18 @@ function resolve_path(&$in,$onlyCheckPath)
 
 	  $in_path=array('v'=>$n_path,'y'=>'e_usage','c_sub'=>0,'sub'=>array(0=>0));
 	 
-	  $r=$in_path['r']=&get_row_e_by_n($n_path);
-	  if(count($r)<1)
+	  $in_path['r']=&get_row_e_by_n($n_path);
+	  if(count($in_path['r'])<1)
 	  {
 	      msg('error-semantic','EXA-resolving failed: entity inside a path could not be found',$in);
 	  }	 
+          
+          $in_path['n_e']=$n_path;
+          $in_path['id_e']=$in_path['r']['id'];
 	 
-	  if(!is_privacy_see_ok($r))
+          $in_path['n_def']=$n_path;
+          
+	  if(!is_privacy_see_ok($in_path['r']))
 	  {
 	    msg('error-semantic','EXA-resolving failed: Condition-check failed for entity inside a path','Privacy-check failed.'.$in);
 	  }
@@ -120,6 +160,8 @@ function resolve_path(&$in,$onlyCheckPath)
 				    1=>array('v'=>$year,'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)),
 				    2=>array('v'=>$exp_date[1],'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)),
 				    3=>array('v'=>$exp_date[2],'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)));
+                  $in_path['r_def']=&get_row_e_by_n($in_path['v']);
+                  
 		}
 		else
 		{
@@ -161,6 +203,7 @@ function resolve_path(&$in,$onlyCheckPath)
 				    1=>array('v'=>$exp_time[0],'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)),
 				    2=>array('v'=>$exp_time[1],'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)),
 				    3=>array('v'=>$exp_time[2],'y'=>'int','n_def'=>'int','c_sub'=>0,'sub'=>array(0=>0)));
+                  $in_path['r_def']=&get_row_e_by_n($in_path['v']);
 		}
 		else
 		{
@@ -209,59 +252,21 @@ function resolve_path(&$in,$onlyCheckPath)
     {
       // TODO textual path-elements not supporte yet (diabled in syntax)
     }
-    
+
   } // end for $m
-    
+
+  $in['in_path']=&$in_path;
   //Set row to the last found element of the path (overwrite ok because it's a leaf)
     
-  if(isset($in_path['r']))$in['r']=$in_path['r'];
-  if(isset($in_path['n_def']))
+  //if(isset($in_path['r']))$in['r']=$in_path['r'];
+  if(!isset($in_path['n_def']))
   {
-    $in['n_def']=$in_path['n_def'];
-    if(isset($in_path['is_plural']))
-    {
-      $in['is_plural']=1;
-      $in['c_min']=$in_path['c_min'];
-      $in['c_max']=$in_path['c_max'];
-    }
-  }
-  else
-  {
-    if(isset($in['r']))
-    {
-      if($in['r']['l']=='usage')
-      {
-	// usage may not happen for definition, but is checked at definition-sub-check
-	$in['n_def']=$in['r']['n_def'];
-      }
-      else
-      {
-	$in['n_def']=$in['r']['n'];
-      }  
-
-      if($in['r']['is_plural'])
-      {
-	$in['is_plural']=1;
-	$in['c_min']=$in['r']['c_min'];
-	$in['c_max']=$in['r']['c_max'];
-      }
-    }
-    else
-    {
-      msg('error-semantic','EXA-resolving failed: path-result could not be determined',$in);
-    }
-  }
+    msg('error-internal', 'n_def could not be found after path-resolving', $in);
+  }    
   
-  if(!$onlyCheckPath||true)
-  {
-    $in['v']=$in_path['v'];
-    $in['y']=$in_path['y'];
-    $in['sub']=$in_path['sub'];
-    $in['c_sub']=$in_path['c_sub'];
-  }  
-  
+  $in['n_def']=$in_path['n_def'];
   
 }
 
   
-?>  
+  

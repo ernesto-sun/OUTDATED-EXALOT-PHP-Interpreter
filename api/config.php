@@ -65,10 +65,7 @@ $GLOBALS['conf']=array(
 
 );
 
-include 'config_sec.php';
+include '../../config_sec.php';
 
 
 
-
-
-?>

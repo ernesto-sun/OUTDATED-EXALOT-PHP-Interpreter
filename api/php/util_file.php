@@ -18,8 +18,8 @@ function getImgNameMedi($imgName)
 //---------------------------------------------
 function showSpecialMedia($idd, $wq)
 {
-  $fid_img = dbs::value("select id from field where id_question=".$wq['id']." and name like 'g-txt-media'");
-  $fid_desc = dbs::value("select id from field where id_question=".$wq['id']." and name like 'g-txt-media-desc'");
+  $fid_img = value("select id from field where id_question=".$wq['id']." and name like 'g-txt-media'");
+  $fid_desc = value("select id from field where id_question=".$wq['id']." and name like 'g-txt-media-desc'");
   if (!$fid_img || !$fid_desc) return;
 
   $img = "";
@@ -29,12 +29,12 @@ function showSpecialMedia($idd, $wq)
 
   if ($idd['id_valuearea'] > 1000)
   { 
-    $img = dbs::value("SELECT value FROM value WHERE id_field=".$fid_img." AND id_valuearea=".$idd['id_valuearea']." limit 1");
-    $id_value_desc = dbs::value("SELECT id FROM value WHERE id_field=".$fid_desc." AND id_valuearea = ".$idd['id_valuearea']." limit 1");
+    $img = value("SELECT value FROM value WHERE id_field=".$fid_img." AND id_valuearea=".$idd['id_valuearea']." limit 1");
+    $id_value_desc = value("SELECT id FROM value WHERE id_field=".$fid_desc." AND id_valuearea = ".$idd['id_valuearea']." limit 1");
 
     if ($id_value_desc > 0)
     {
-      $desc = dbs::value("SELECT value from value where id=".$id_value_desc);
+      $desc = value("SELECT value from value where id=".$id_value_desc);
     }
   }
   

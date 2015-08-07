@@ -1,5 +1,54 @@
 <?php 
 
+if(!$is_api_call)die('X');
+
+
+$GLOBALS=array(
+      'is-exalot'=>0, 
+      'id-st-o'=>0,
+      'n-u'=>'',
+      'n-u-agent'=>'',
+      'id-ses'=>0,
+      'id-con'=>0,
+      'id-st'=>0,
+      'id-x'=>0,
+      'i-xin'=>0,
+      'login'=>0,
+
+      'id-e-b'=>3,
+      'id-e-noo'=>4,
+      'id-e-x'=>5,
+
+      'st'=>array(
+		'is-public'=>0,
+		'is-now'=>0,
+		'method'=>'',
+		'accept'=>'',
+		'charset'=>'',
+		'n-lang1'=>'',
+		'n-lang2'=>'',
+		'n-lang3'=>'',
+		'year'=>0,
+		'datetime'=>'',
+		'i'=>0,
+		'c'=>0,
+		't'=>''),
+    'temp'=>array('i-msg'=>0,
+	          'n-list-exp'=>"''",
+		  'n-list-def'=>"''",
+		  'n-list-new'=>"''",
+	          'i-list-exp'=>0,
+		  'i-list-def'=>0,
+		  'i-list-new'=>0,
+		  'i-context'=>0,
+		  'i-path'=>0,
+		  'i-sys'=>0, // count of expressions like op, default, limited
+		  'c-def'=>0,
+		  'c-alias'=>0,
+		  'c-new'=>0,
+		  'c-exp-top'=>0,
+		  'c-exp'=>0));
+
 
 $GLOBALS['day_per_month']=array(
 	    1=>31,
@@ -541,7 +590,15 @@ $GLOBALS['msg']=array(
 			   't'=>'unauthorized',
 			   'd'=>'the server is refusing to respond, valid login required',
 			   's'=>401),
-  'error-internal'=>array('y'=>'error',
+  'error-php'=>array('y'=>'error',
+			   't'=>'PHP-Error',
+			   'd'=>'',
+			   's'=>501),
+  'warning-php'=>array('y'=>'warning',
+			   't'=>'PHP-Warning',
+			   'd'=>'',
+			   's'=>0),
+ 'error-internal'=>array('y'=>'error',
 			   't'=>'not Implemented',
 			   'd'=>'an internal error happened',
 			   's'=>501),

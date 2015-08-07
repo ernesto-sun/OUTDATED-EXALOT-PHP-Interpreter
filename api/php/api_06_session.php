@@ -1,4 +1,42 @@
 <?php
+
+/**
+ *  EXALOT digital language for all agents
+ *
+ *  api_06_session.php saves the session-metadata optionally, even if
+ *  EXALOT-calls are stateless  
+ * 
+ *  @see <http://exalot.com>
+ *  
+ *  @author  Ernesto Sun <contact@ernesto-sun.com>
+ *  @version 20150112-eto
+ *  @since 20150112-eto
+ * 
+ *  @copyright (C) 2014-2015 Ing. Ernst Johann Peterec <http://ernesto-sun.com>
+ *  @license AGPL <http://www.gnu.org/licenses/agpl.txt>
+ *
+ *  EXALOT is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  EXALOT is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with EXALOT. If not, see <http://www.gnu.org/licenses/agpl.txt>.
+ *
+ */
+
+
+/**
+ *
+*/
+
+
+
 if(!$is_api_call)die('X');
 
 // --------------------------------------------------
@@ -16,7 +54,7 @@ if (isset($_SESSION['id-ses']))
 	session_destroy();
 	msg('error-unauthorized','invalid login','ATTENTION: ip-address has changed');
   }
-  dbs::exec("UPDATE {$GLOBALS['pre']}ses 
+  db_exec("UPDATE {$GLOBALS['pre']}ses 
   SET cl_lastrequest=NOW(),
   id_con_last={$_SESSION['id-con-last']} 
   WHERE id={$_SESSION['id-ses']}");
@@ -27,7 +65,7 @@ else
   $agent=validInput($_SERVER['HTTP_USER_AGENT']);
   $sessionid=validInput(session_id());
 
-  $sessionID = dbs::insert("INSERT INTO {$GLOBALS['pre']}ses
+  $sessionID = insert("INSERT INTO {$GLOBALS['pre']}ses
   (cl_cr,
   cl_lastrequest,
   ip,
@@ -45,7 +83,7 @@ else
   '{$sessionid}',
   '',
   1,
-  '{$GLOBALS['context']['n-u']}')");
+  '{$GLOBALS['n-u']}')");
   
   if ($sessionID < 1)
   {
@@ -59,7 +97,6 @@ else
   $createNewCon=1;
 }
 
-$GLOBALS['context']['id-ses']=$_SESSION['id-ses'];
+$GLOBALS['id-ses']=$_SESSION['id-ses'];
 
 
-?>

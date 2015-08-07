@@ -1,122 +1,109 @@
 <?php
 
-class dbs
-{
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
-public static $conn=0;
-		
-//---------------------------------------------------------------------------------
-public static function init($conn)
-{
-	self::$conn = $conn;
-}
-	
 	
 //---------------------------------------------------------------------------------
-public static function query($sql)
+function query($sql)
 {
-	$r = self::$conn->query($sql);
+	$r = $GLOBALS['db']->query($sql);
 	if ($r===false) 
 	{
-	  if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',self::$conn->error;
+	  if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',$GLOBALS['db']->error;
 	  msg('error-internal',
 	      'Sorry, a database error occurred.',
-	      'query failed: '.substr($sql,0,80).' MYSQL: '.self::$conn->error);
+	      'query failed: '.substr($sql,0,80).' MYSQL: '.$GLOBALS['db']->error);
 	}
 	return $r;
 }
 
 
 //---------------------------------------------------------------------------------
-public static function query_array($sql)
+function query_array($sql)
 {
-	$r = self::query($sql);
+	$r = query($sql);
 	$arr=$r->fetch_all(MYSQLI_ASSOC);
-	self::free($r);
+	$r->close();
 	return $arr;
 }
 
 //---------------------------------------------------------------------------------
-public static function idlist($sql,$index_id='id')
+function idlist($sql,$index_id='id')
 {
 	$r=array();
-	$res = self::query($sql);
+	$res = query($sql);
 	while ($d = $res->fetch_assoc()) 
 	{
 	   $r[$d[$index_id]]=$d;
 	}
-	self::free($res);
+	$res->close();
 	return $r;
 }
 
-	
+//---------------------------------------------------------------------------------
+function idvlist($sql,$index_id,$v_id)
+{
+	$r=array();
+	$res = query($sql);
+	while ($d = $res->fetch_assoc()) 
+	{
+	   $r[$d[$index_id]]=$d[$v_id];
+	}
+	$res->close();
+	return $r;
+}
+
 
 
 //---------------------------------------------------------------------------------
-public static function exec($sql)
+function db_exec($sql)
 {
-  if(self::$conn->query($sql)===false) 
+  if($GLOBALS['db']->query($sql)===false) 
   {
-    if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',self::$conn->error;
+    if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',$GLOBALS['db']->error;
     msg('error-internal',
 	'Sorry, a database error occurred.',
-	'exec failed: '.substr($sql,0,80).' MYSQL: '.self::$conn->error);
+	'exec failed: '.substr($sql,0,80).' MYSQL: '.$GLOBALS['db']->error);
     }
   }
 
 	
 //---------------------------------------------------------------------------------
-public static function insert($sql)
+function insert($sql)
 {
-	self::exec($sql);
-	return  self::$conn->insert_id;
+	db_exec($sql);
+	return  $GLOBALS['db']->insert_id;
 }
 
 //---------------------------------------------------------------------------------
-public static function value($sql)
+function value($sql)
 {
-	$row=self::singlerow($sql,MYSQLI_NUM);
+	$row=singlerow($sql,MYSQLI_NUM);
 	return count($row)?$row[0]:'';
 }
 
 //---------------------------------------------------------------------------------
-public static function singlerow($sql,$fetch_mode=MYSQLI_ASSOC)
+function singlerow($sql,$fetch_mode=MYSQLI_ASSOC)
 {
-	$r = self::$conn->query($sql);
+	$r = $GLOBALS['db']->query($sql);
 	if ($r===false) 
 	{
-	  if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',self::$conn->error;
+	  if($GLOBALS['debug'])echo 'SQL-Query: ',$sql,'<br/>MYSQL: ',$GLOBALS['db']->error;
 	  msg('error-internal',
 	      'Sorry, a database error occurred.',
-	      'singlerow failed: '.substr($sql,0,80).' MYSQL: '.self::$conn->error);
+	      'singlerow failed: '.substr($sql,0,80).' MYSQL: '.$GLOBALS['db']->error);
 	}
 	if (mysqli_num_rows($r) < 1)
 	{
 	   //echo '<br/><br/>mysqli_num_rows<1';
 	   return array();
 	}
-	if (mysqli_field_count(self::$conn) < 1)
+	if (mysqli_field_count($GLOBALS['db']) < 1)
 	{
 	  //echo '<br/><br/>mysqli_field_count<1';
 	  return array();
 	}
 	$row = mysqli_fetch_array($r,$fetch_mode);
-	self::free($r);
+	$r->close();
 	return $row;
 }
 	
 
-//---------------------------------------------------------------------------------
-public static function free($r)
-{
-	if ($r) $r->close();
-}	
-
-	
-}  // class
-
-?>
