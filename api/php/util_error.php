@@ -46,7 +46,7 @@ function error_handler_2()
 
     if($error && ($error['type'] & E_FATAL))
     {
-        handler($error['type'], $error['message'], $error['file'], $error['line']);
+        error_handler($error['type'], $error['message'], $error['file'], $error['line']);
     }    
 }
 

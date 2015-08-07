@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  *  EXALOT digital language for all agents
  *
