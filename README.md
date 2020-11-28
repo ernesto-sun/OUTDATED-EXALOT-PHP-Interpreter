@@ -1,3 +1,7 @@
+Note: 26. Nov. 2020: This work is outdated. I keep it for reference. Check out EXA instead: https://github.com/ernesto-sun/EXA
+
+-------------------------
+
 # EXALOT
 digital language for all agents
 
